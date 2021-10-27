@@ -1,9 +1,16 @@
 using System;
 using System.IO;
+using System.Drawing;
+using System.Drawing.Text;
+using System.Drawing.Printing;
+using System.Drawing.Drawing2D;
+using System.Drawing.Imaging;
+using System.Drawing.Design;
 using System.Collections.Generic;
 using SkiaSharp;
 using MediaToolkit;
 using MediaToolkit.Model;
+using MediaToolkit.Options;
 namespace AssaultSrtProvider.Representation
 {
     class Render
@@ -12,10 +19,11 @@ namespace AssaultSrtProvider.Representation
         public Dictionary<string, string> files;
         public Engine MediatoolEngine = new Engine();
         public MediaFile video;
-        public Render(Snapshot[] sublist, string fontpath = @"C:\\Windows\\Fonts\\")
+        public Render(Snapshot[] sublist,string tempfpath, string fontpath = @"C:\\Windows\\Fonts\\")
         {
             this.Subslist = sublist;
             this.files["fonts"] = fontpath;
+            this.files["temp"] = tempfpath;
         }
         public Render(Snapshot[] sublist, Dictionary<string, string> files)
         {
@@ -26,13 +34,7 @@ namespace AssaultSrtProvider.Representation
         {
             video = new MediaFile(Video);
             MediatoolEngine.GetMetadata(video);
-            var i = 0;
-            for (int i = 0; i < video.Metadata.Duration.Seconds;i++)
-            {
-                var options = new ConversionOptions { Seek = TimeSpan.FromSeconds(i) };
-                var outputFile = new MediaFile { Filename = string.Format("{0}\\image-{1}.jpeg", outputPath, i) };
-                engine.GetThumbnail(mp4, outputFile, options);
-            }
+            
         }
         public void rendFrame(dynamic time)
         {
@@ -46,10 +48,21 @@ namespace AssaultSrtProvider.Representation
                 }
             }
             //get frame from video
-            
-
+            var rawframe = new MediaFile(string.Format("{0}\\{1}.png", files["temp"], "tempframe"));
+            MediatoolEngine.GetThumbnail(video, rawframe, new ConversionOptions { Seek = TimeSpan.FromSeconds(time) });
+            var bitmap = new Bitmap(string.Format("{0}\\{1}.png", files["temp"], "tempframe"));
+            var bmpd = bitmap.LockBits(new Rectangle(0, 0, bitmap.Width, bitmap.Height), ImageLockMode.ReadOnly, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
             //initialize rendering
-            var surface = SKSurface.Create()
+            var info = new SKImageInfo(bitmap.Width, bitmap.Height);
+            var surface = SKSurface.Create(info);
+            var canvas = surface.Canvas;
+            SKBitmap frame = new SKBitmap(info, (byte)bmpd.Scan0);
+            canvas.DrawBitmap(frame, new SKPoint(info.Width, info.Height));
+            //render subs
+            foreach(var i in rendlist)
+            {
+
+            }
         }
     }
 }

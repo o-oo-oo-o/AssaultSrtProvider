@@ -6,4 +6,9 @@
         <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
     </PropertyGroup>
 
+    <ItemGroup>
+      <PackageReference Include="MediaToolkit" Version="1.1.0.1" />
+      <PackageReference Include="SkiaSharp" Version="2.80.3" />
+    </ItemGroup>
+
 </Project>
