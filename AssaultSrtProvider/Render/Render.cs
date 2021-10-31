@@ -8,39 +8,33 @@ namespace AssaultSrtProvider
 {
     class Render
     {
-        public TagTranslator td;
+        public StyleCollector styleCollector;
         public Render(string bindfilepath = null)
         {
-            this.td = new TagTranslator(bindfilepath);
+            this.styleCollector = new StyleCollector(bindfilepath);
         }
-        private void rendsub(SKCanvas canvas,Representation.Snapshot sub,int x,int y)
+        public void rendsub(SKCanvas canvas,Representation.Snapshot sub,int x,int y)
         {
-            var style = td.get_sub_style_info(sub);
-            if (style.ContainsKey("rendtext")){
-                for (int i = 0; i < style["rendtext"]; i++)
-                {
-                    var lvl = (i).ToString();
-                    var font = SKTypeface.FromFile(style["fontpath" + lvl] + style["fontname"+lvl]);
-                    SKPaint paint = new SKPaint(font.ToFont());
-                    paint.Color = new SKColor(style["color" + lvl]);
-                    paint.BlendMode = style["blendmode" + lvl];
-                    paint.MaskFilter = SKMaskFilter.CreateBlur(style["blurtype" + lvl], style["blur" + lvl]);
-                    paint.TextSize = style["textsize" + lvl];
-                    paint.Shader = style["shader" + lvl];
-                    canvas.DrawText(style["text" + lvl], style["position" + lvl][0]+x, style["position" + lvl][1]+y, paint);
-                }
-            }
-            if (style.ContainsKey("rendimage"))
+            var styles = styleCollector.get_sub_style_info(sub);
+            foreach(var style in styles)
             {
-                for(int i = 0; i < style["rendimage"]; i++)
+                var contains = style.contains;
+                var font = SKTypeface.FromFile(contains["font"]);
+                SKPaint paint = new SKPaint(font.ToFont());
+                paint.Color = new SKColor(contains["color"]);
+                paint.BlendMode = contains["blendmode"];
+                paint.MaskFilter = SKMaskFilter.CreateBlur(contains["blurtype"], contains["blur"]);
+                paint.TextSize = contains["size"];
+                paint.Shader = contains["shader"];
+                if (contains["image"])
                 {
-                    var lvl = (i).ToString();
-                    SKBitmap bitm = SKBitmap.Decode(style["imagefile"+lvl]);
-                    canvas.DrawBitmap(bitm, style["imageposition" + lvl][0]+x, style["imageposition" + lvl][1]+y);
+                    SKBitmap bmp = SKBitmap.Decode(contains["image"]);
+                    canvas.DrawBitmap(bmp, contains["pos"][0] + x, contains["pos"][1] + y);
                 }
+                canvas.DrawText(contains["text"], contains["pos"][0] + x, contains["pos"][1] + y, paint);
             }
-
         }
+
         public SKSurface rend(Representation.Snapshot[] subs,SKBitmap frame, int x = 0,int y = 0)
         {
             //Create surface&canvas 4 render
