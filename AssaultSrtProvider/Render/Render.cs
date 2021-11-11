@@ -9,9 +9,13 @@ namespace AssaultSrtProvider
     class Render
     {
         public StyleCollector styleCollector;
-        public Render(string bindfilepath = null)
+        public Representation.Snapshot[] subs;
+        public Slicer slicer;
+        public Render(Representation.Snapshot[] subs,Slicer slicer,string bindfilepath = null)
         {
+            this.subs = subs;
             this.styleCollector = new StyleCollector(bindfilepath);
+            this.slicer = slicer;
         }
         public void rendsub(SKCanvas canvas,Representation.Snapshot sub,int x,int y)
         {
@@ -35,9 +39,10 @@ namespace AssaultSrtProvider
             }
         }
 
-        public SKSurface rend(Representation.Snapshot[] subs,SKBitmap frame, int x = 0,int y = 0)
+        public SKSurface rend(Representation.Snapshot[] subs, string framefile, int x = 0, int y = 0)
         {
             //Create surface&canvas 4 render
+            var frame = SKBitmap.Decode(framefile);
             SKImageInfo info = new SKImageInfo(frame.Width,frame.Height);
             SKSurface surface = SKSurface.Create(info);
             var canvas = surface.Canvas;
@@ -47,6 +52,34 @@ namespace AssaultSrtProvider
             foreach(var sub in subs)
             {
                 rendsub(canvas,sub,x,y);
+            }
+
+            return surface;
+        }
+        public SKSurface rend(Representation.Snapshot[] subs, int time, int x = 0, int y = 0)
+        {
+            //select subs to rend
+            var substorend = new List<Representation.Snapshot>();
+            foreach(var i in subs)
+            {
+                if (i.Start < time&time < i.End)
+                {
+                    substorend.Add(i);
+                }
+            }
+            //get frame
+            var framefile = slicer.get_frame(time);
+            //Create surface&canvas 4 render
+            var frame = SKBitmap.Decode(framefile);
+            SKImageInfo info = new SKImageInfo(frame.Width, frame.Height);
+            SKSurface surface = SKSurface.Create(info);
+            var canvas = surface.Canvas;
+            //Draw frame
+            canvas.DrawBitmap(frame, x, y);
+            //Rens subs
+            foreach (var sub in substorend)
+            {
+                rendsub(canvas, sub, x, y);
             }
 
             return surface;
